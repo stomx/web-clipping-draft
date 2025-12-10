@@ -3,6 +3,7 @@ import sys
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from src.graph import create_graph
+from src.utils.input_handler import create_graph_inputs
 
 # Load environment variables
 load_dotenv()
@@ -32,23 +33,19 @@ def main():
     
     app = create_graph()
     
-    inputs = {
-        "query": args.query,
-        "language": args.lang,
-        "format": args.format,
-        "date_range": {
-            "startDate": args.startDate,
-            "endDate": args.endDate,
-            "startTime": args.startTime,
-            "endTime": args.endTime
-        },
-        "target_count": args.count,
-        "depth": 0,
-        "max_depth": 0 # Currently disabling deep loop by default for safety
-    }
+    inputs = create_graph_inputs(
+        query=args.query,
+        lang=args.lang,
+        format=args.format,
+        start_date=args.startDate,
+        end_date=args.endDate,
+        start_time=args.startTime,
+        end_time=args.endTime,
+        count=args.count
+    )
     
     print(f"Starting research for: {args.query}")
-    print(f"Time Range: {args.startDate} {args.startTime} ~ {args.endDate} {args.endTime}")
+    print(f"Time Range: {inputs['date_range']['startDate']} {inputs['date_range']['startTime']} ~ {inputs['date_range']['endDate']} {inputs['date_range']['endTime']}")
     print(f"Language: {args.lang}, Format: {args.format}")
     
     # Run the graph
