@@ -165,10 +165,28 @@ def fetch_web_content(url: str):
             print(f"Warning: No text found at {url} (Length: {len(response.text)})")
             return None
             
+        # Extract Date
+        published_date = ""
+        date_metas = [
+            {"property": "article:published_time"},
+            {"name": "date"},
+            {"name": "pubdate"},
+            {"name": "original-publication-date"},
+            {"name": "publication_date"},
+            {"property": "og:published_time"}
+        ]
+        
+        for meta_attr in date_metas:
+            tag = soup.find("meta", attrs=meta_attr)
+            if tag and tag.get("content"):
+                published_date = tag.get("content").split("T")[0] # Extract YYYY-MM-DD
+                break
+
         return {
             "text": text[:5000],
             "thumbnail": thumbnail,
-            "description": description
+            "description": description,
+            "published_date": published_date
         }
     except Exception as e:
         print(f"Error fetching {url}: {e}")
