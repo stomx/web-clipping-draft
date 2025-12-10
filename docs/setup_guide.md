@@ -12,7 +12,7 @@
 
 ```bash
 git clone https://github.com/stomx/web-clipping-draft.git
-cd web-clipping
+cd web-clipping-draft
 ```
 
 ## 2. 백엔드 설정 (Backend Setup)
