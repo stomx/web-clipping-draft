@@ -27,11 +27,23 @@ def tavily_search(query: str, max_results=5, date_range=None):
         # But if we want to ensure community sites are candidates, we can add them to the query 
         # or just rely on the high max_results.
         
+        # Calculate days for max info
+        days = 3 # Default to recent 3 days if no range
+        if date_range and date_range.get("startDate"):
+            try:
+                start_date_str = date_range.get("startDate")
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+                delta = datetime.now() - start_date
+                days = max(1, delta.days + 1) # Ensure at least 1 day
+            except Exception as e:
+                print(f"Error parsing start date: {e}")
+
         # Use advanced search depth to get more metadata like published_date
         search_params = {
             "query": query, 
             "max_results": max_results,
-            "search_depth": "advanced"
+            "search_depth": "advanced",
+            "days": days
         }
         
         response = client.search(**search_params)
