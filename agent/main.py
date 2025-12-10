@@ -1,7 +1,13 @@
 import argparse
 import sys
+from pathlib import Path
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+
+# Add project root to python path to allow importing from agent
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR))
+
 from agent.graph import create_graph
 from agent.utils.input_handler import create_graph_inputs
 
