@@ -1,10 +1,10 @@
-from src.state import AgentState
-from src.utils.tools import fetch_web_content, fetch_youtube_transcript
+from agent.state import AgentState
+from agent.utils.tools import fetch_web_content, fetch_youtube_transcript
 
 import asyncio
 import aiohttp
-from src.state import AgentState
-from src.utils.async_tools import fetch_web_content_async, fetch_youtube_transcript
+from agent.state import AgentState
+from agent.utils.async_tools import fetch_web_content_async, fetch_youtube_transcript
 
 async def process_item(session, item):
     """
@@ -41,7 +41,8 @@ async def process_item(session, item):
             "content": content_data,
             "type": source_type,
             "thumbnail": thumbnail,
-            "description": description
+            "description": description,
+            "published_date": item.get("published_date", "")
         }
     return None
 

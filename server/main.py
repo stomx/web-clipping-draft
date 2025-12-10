@@ -4,7 +4,7 @@ import json
 import asyncio
 from typing import Optional, Dict, Any
 
-# Add project root to python path to allow importing from src
+# Add project root to python path to allow importing from agent
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
@@ -13,14 +13,24 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-from src.graph import create_graph
-from src.utils.input_handler import create_graph_inputs
-from src.utils.job_manager import job_manager, JobStatus
+from agent.graph import create_graph
+from agent.utils.input_handler import create_graph_inputs
+from server.job_manager import job_manager, JobStatus
 
 # Load env variables
 load_dotenv()
 
 app = FastAPI(title="Web Research Agent API")
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3003"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize the graph
 graph = create_graph()
@@ -28,7 +38,7 @@ graph = create_graph()
 class ResearchRequest(BaseModel):
     query: str = Field(..., description="Research topic")
     lang: str = Field(default="Korean", description="Output language")
-    format: str = Field(default="json", description="Output format (markdown or json)")
+    format: str = Field(default="markdown", description="Output format (markdown or json)")
     start_date: Optional[str] = Field(default=None, description="Start date (YYYY-MM-DD)")
     end_date: Optional[str] = Field(default=None, description="End date (YYYY-MM-DD)")
     start_time: Optional[str] = Field(default=None, description="Start time (HH:MM:SS)")
@@ -75,9 +85,49 @@ async def research_endpoint(request: ResearchRequest, background_tasks: Backgrou
     if request.mode == "stream":
         async def event_generator():
             try:
-                async for event in graph.astream(inputs):
-                    data = json.dumps(event, default=str, ensure_ascii=False)
-                    yield f"data: {data}\n\n"
+                # Use astream_events v2 for granular updates (including LLM outputs)
+                async for event in graph.astream_events(inputs, version="v2"):
+                    kind = event["event"]
+                    
+                    # 1. Custom handling for individual LLM outputs (Summaries)
+                    if kind == "on_chat_model_end":
+                        # We only want summaries, not other LLM calls (if any)
+                        # We can try to infer context or just process all valid JSONs
+                        data = event["data"]["output"].content
+                        
+                        # Try to detect if it's a summary result (JSON structure)
+                        # This is a bit loose but effective for streaming visibility
+                        try:
+                            # Verify it looks like our summary structure
+                            # It might be a Raw string if regex failed inside agent, but usually it's JSON string
+                            # The agent returns a list of strings, but here we catch the raw LLM output
+                            # The LLM output is what we want to stream immediately
+                            
+                            # Clean it up slightly for the client
+                            cleaned_data = data.strip()
+                            if cleaned_data.startswith("```json"):
+                                cleaned_data = cleaned_data[7:-3]
+                            elif cleaned_data.startswith("```"):
+                                cleaned_data = cleaned_data[3:-3]
+                                
+                            # Send as a special event type for the client to render incrementally
+                            payload = json.dumps({"custom_summary": cleaned_data}, ensure_ascii=False)
+                            yield f"data: {payload}\n\n"
+                        except:
+                            pass
+
+                    # 2. Standard State Updates (Node completions)
+                    # on_chain_end usually corresponds to a node finishing in LangGraph
+                    elif kind == "on_chain_end":
+                         # We can also look for 'on_chain_end' with name 'LangGraph' or specific node names
+                         # But simplistic approach: if it has output that matches our state keys
+                         output = event["data"].get("output")
+                         if output and isinstance(output, dict):
+                             # Filter out huge dumps, we just want specific keys
+                             if any(k in output for k in ["search_results", "contents", "summaries", "report"]):
+                                 payload = json.dumps(output, default=str, ensure_ascii=False)
+                                 yield f"data: {payload}\n\n"
+
             except Exception as e:
                 error_data = json.dumps({"error": str(e)}, ensure_ascii=False)
                 yield f"data: {error_data}\n\n"

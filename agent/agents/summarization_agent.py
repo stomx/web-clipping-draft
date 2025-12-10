@@ -1,12 +1,12 @@
-from src.state import AgentState
-from src.utils.llm import get_llm
+from agent.state import AgentState
+from agent.utils.llm import get_llm
 from langchain_core.messages import SystemMessage, HumanMessage
 
 import json
 import asyncio
 import re
-from src.state import AgentState
-from src.utils.llm import get_llm
+from agent.state import AgentState
+from agent.utils.llm import get_llm
 from langchain_core.messages import SystemMessage, HumanMessage
 
 def clean_json_string(content_str: str) -> str:
@@ -118,14 +118,16 @@ async def summarize_item(llm, content, language, output_format):
     else:
          summary_data = [f"(Mock Summary) {text[:200]}..."]
 
-    # Construct result object
+    date = content.get("published_date", "")
+
+    # Construct result object (without description)
     result_obj = {
         "title": title,
         "summary": summary_data,
         "category": category,
         "source": url,
-        "thumbnail": thumbnail,
-        "description": description
+        "date": date,
+        "thumbnail": thumbnail
     }
 
     # Return object directly (don't json dump yet if we want to process it later)

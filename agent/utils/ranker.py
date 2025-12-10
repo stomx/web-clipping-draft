@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict, Any
-from src.utils.llm import get_llm
+from agent.utils.llm import get_llm
 from langchain_core.messages import SystemMessage, HumanMessage
 
 def rank_results(query: str, results: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:

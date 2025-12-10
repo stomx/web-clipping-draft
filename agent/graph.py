@@ -1,10 +1,10 @@
 from langgraph.graph import StateGraph, END
-from src.state import AgentState
-from src.agents.search_agent import search_node
-from src.agents.content_extractor import content_extractor_node
-from src.agents.summarization_agent import summarization_node
-from src.agents.analyzer_agent import analyzer_node
-from src.agents.report_generator import report_generator_node
+from agent.state import AgentState
+from agent.agents.search_agent import search_node
+from agent.agents.content_extractor import content_extractor_node
+from agent.agents.summarization_agent import summarization_node
+from agent.agents.analyzer_agent import analyzer_node
+from agent.agents.report_generator import report_generator_node
 
 def create_graph():
     workflow = StateGraph(AgentState)

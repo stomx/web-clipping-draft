@@ -27,10 +27,19 @@ def tavily_search(query: str, max_results=5, date_range=None):
         # But if we want to ensure community sites are candidates, we can add them to the query 
         # or just rely on the high max_results.
         
-        # Let's just do a broad search with high max_results.
-        search_params = {"query": query, "max_results": max_results}
+        # Use advanced search depth to get more metadata like published_date
+        search_params = {
+            "query": query, 
+            "max_results": max_results,
+            "search_depth": "advanced"
+        }
         
         response = client.search(**search_params)
+        
+        # Debug: Check if published_date is present
+        if response.get("results"):
+            print(f"DEBUG: First result keys: {response['results'][0].keys()}")
+            print(f"DEBUG: First result date: {response['results'][0].get('published_date')}")
         
         results = []
         for r in response.get("results", []):
@@ -152,7 +161,6 @@ def fetch_web_content(url: str):
         meta_desc = soup.find("meta", attrs={"name": "description"}) or soup.find("meta", property="og:description")
         if meta_desc:
             description = meta_desc.get("content", "")
-        
         if not text:
             print(f"Warning: No text found at {url} (Length: {len(response.text)})")
             return None

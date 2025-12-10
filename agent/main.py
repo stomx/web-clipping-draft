@@ -2,8 +2,8 @@ import argparse
 import sys
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from src.graph import create_graph
-from src.utils.input_handler import create_graph_inputs
+from agent.graph import create_graph
+from agent.utils.input_handler import create_graph_inputs
 
 # Load environment variables
 load_dotenv()
